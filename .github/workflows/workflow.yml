@@ -65,7 +65,9 @@ jobs:
         echo "::set-env name=AKS_CLUSTER_NAME::$_AKS_CLUSTER_NAME"
 
     - name: Create AKS cluster
-      run: |
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
           az aks create \
               --resource-group $RESOURCE_GROUP \
               --name $AKS_CLUSTER_NAME \
