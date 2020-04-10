@@ -80,7 +80,9 @@ jobs:
               --service-cidr 10.2.0.0/24 \
               --dns-service-ip 10.2.0.10 \
               --docker-bridge-address 172.17.0.1/16 \
-              --generate-ssh-keys
+              --generate-ssh-keys \
+              --service-principal ${{ secrets.SPN_ID }} \
+              --client-secret ${{ secrets.SPN_SECRET }}
 
     - name: Retreive cluster credentials
       run: |
