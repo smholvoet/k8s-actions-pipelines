@@ -1,0 +1,39 @@
+on: push
+
+jobs:
+  deploy_resources:
+    name: 'Deploy MongoDB'
+    runs-on: ubuntu-latest
+    env: 
+      RESOURCE_GROUP: aksworkshop
+      AKS_CLUSTER_NAME: ${{ secrets.AKS_CLUSTER_NAME }}
+    steps:
+
+    - name: Configure helm repo
+      run: helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+
+    - name: Install Helm chart
+      run: |
+          helm install ratings stable/mongodb \
+            --namespace ratingsapp \
+            --set mongodbUsername=${{ secrets.MONGODB_USERNAME }},mongodbPassword=${{ secrets.MONGODB_PASSWORD }},mongodbDatabase=ratingsdb
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Retreive cluster credentials
+      run: |
+          az aks get-credentials \
+              --resource-group $RESOURCE_GROUP \
+              --name $AKS_CLUSTER_NAME
+
+    - name: Create Kubernetes secret
+      run: |
+          kubectl create secret generic mongosecret \
+            --namespace ratingsapp \
+            --from-literal=MONGOCONNECTION="mongodb://${{ secrets.MONGODB_USERNAME }}:${{ secrets.MONGODB_PASSWORD }}@ratings-mongodb.ratingsapp.svc.cluster.local:27017/ratingsdb"
+
+    - name: Validate secret
+      run: kubectl describe secret mongosecret --namespace ratingsapp

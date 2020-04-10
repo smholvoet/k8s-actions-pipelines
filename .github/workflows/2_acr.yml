@@ -50,7 +50,7 @@ jobs:
             --name $ACR_NAME \
             --output table
 
-    - name: Authenticate AKS clustere to ACR
+    - name: Authenticate AKS cluster to ACR
       run: |
           az aks update \
             --name ${{ secrets.AKS_CLUSTER_NAME }} \
