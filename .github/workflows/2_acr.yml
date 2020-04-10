@@ -1,0 +1,58 @@
+on: push
+
+jobs:
+  deploy_resources:
+    name: 'Deploy ACR resources'
+    runs-on: ubuntu-latest
+    env: 
+      REGION_NAME: westeurope
+      RESOURCE_GROUP: aksworkshop
+    steps:
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Generate unique ACR name
+      run: |
+          _ACR_NAME=acr$RANDOM
+          echo "::set-env name=ACR_NAME::$_ACR_NAME"
+
+    - name: Create ACR instance
+      run: |
+          az acr create \
+              --resource-group $RESOURCE_GROUP \
+              --location $REGION_NAME \
+              --name $ACR_NAME \
+              --sku Standard
+
+    - name: Build ratings-api image
+      run: |
+          git clone https://github.com/MicrosoftDocs/mslearn-aks-workshop-ratings-api.git
+          cd mslearn-aks-workshop-ratings-api
+          az acr build \
+            --registry $ACR_NAME \
+            --image ratings-api:v1 .
+
+    - name: Build ratings-web image
+      run: |
+          cd ~
+          git clone https://github.com/MicrosoftDocs/mslearn-aks-workshop-ratings-web.git
+          cd mslearn-aks-workshop-ratings-web
+          az acr build \
+            --registry $ACR_NAME \
+            --image ratings-web:v1 .
+
+    - name: Verify images
+      run: |
+          az acr repository list \
+            --name $ACR_NAME \
+            --output table
+
+    - name: Authenticate AKS clustere to ACR
+      run: |
+          az aks update \
+            --name ${{ secrets.AKS_CLUSTER_NAME }} \
+            --resource-group $RESOURCE_GROUP \
+            --attach-acr $ACR_NAME

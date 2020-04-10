@@ -2,7 +2,7 @@ on: push
 
 jobs:
   deploy_resources:
-    name: 'Deploy k8s resources'
+    name: 'Deploy AKS resources'
     runs-on: ubuntu-latest
     env: 
       REGION_NAME: westeurope
@@ -18,13 +18,6 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
     
-    - name: Variables sanity check
-      run: |
-        echo $REGION_NAME
-        echo $RESOURCE_GROUP
-        echo $SUBNET_NAME
-        echo $VNET_NAME
-
     - name: Create resource group
       run: |
           az group create \
@@ -58,7 +51,7 @@ jobs:
               --output tsv)
           echo "::set-env name=VERSION::$_VERSION"
 
-    - name: Create unique cluster name
+    - name: Generate unique cluster name
       run: |
         _AKS_CLUSTER_NAME=aksworkshop-$RANDOM
         echo _$AKS_CLUSTER_NAME
