@@ -1,0 +1,94 @@
+on: push
+
+jobs:
+  deploy_resources:
+    name: 'Deploy k8s resources'
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set variables
+      run: |
+        REGION_NAME=westeurope
+        RESOURCE_GROUP=aksworkshop
+        SUBNET_NAME=aks-subnet
+        VNET_NAME=aks-vnet
+
+    # fetch credentials and store them in a secret before running az login 
+    # see https://github.com/marketplace/actions/azure-login#configure-azure-credentials
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Create resource group
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az group create \
+            --name $RESOURCE_GROUP \
+            --location $REGION_NAME
+
+    - name: Configure networking
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az group create \
+            --name $RESOURCE_GROUP \
+            --location $REGION_NAME
+
+    - name: Set variables
+      run: |
+        SUBNET_ID=$(az network vnet subnet show \
+            --resource-group $RESOURCE_GROUP \
+            --vnet-name $VNET_NAME \
+            --name $SUBNET_NAME \
+            --query id -o tsv)
+
+    - name: Get latest AKS version
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          VERSION=$(az aks get-versions \
+              --location $REGION_NAME \
+              --query 'orchestrators[?!isPreview] | [-1].orchestratorVersion' \
+              --output tsv)
+
+    - name: Create unique cluster name
+      run: |
+        AKS_CLUSTER_NAME=aksworkshop-$RANDOM
+        echo $AKS_CLUSTER_NAME
+
+    - name: Create AKS cluster
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az aks create \
+              --resource-group $RESOURCE_GROUP \
+              --name $AKS_CLUSTER_NAME \
+              --vm-set-type VirtualMachineScaleSets \
+              --load-balancer-sku standard \
+              --location $REGION_NAME \
+              --kubernetes-version $VERSION \
+              --network-plugin azure \
+              --vnet-subnet-id $SUBNET_ID \
+              --service-cidr 10.2.0.0/24 \
+              --dns-service-ip 10.2.0.10 \
+              --docker-bridge-address 172.17.0.1/16 \
+              --generate-ssh-keys
+
+    - name: Retreive cluster credentials
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az aks get-credentials \
+              --resource-group $RESOURCE_GROUP \
+              --name $AKS_CLUSTER_NAME
+
+    - name: List nodes
+      run: kubectl get nodes
+
+    - name: List namespaces
+      run: kubectl get namespace
+
+    - name: Create namespace
+      run: kubectl create namespace ratingsapp
