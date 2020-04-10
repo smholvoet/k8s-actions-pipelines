@@ -48,7 +48,7 @@ jobs:
             --vnet-name $VNET_NAME \
             --name $SUBNET_NAME \
             --query id -o tsv)
-        echo "::set-env name=SUBNET_ID::_$SUBNET_ID"
+        echo "::set-env name=SUBNET_ID::$_SUBNET_ID"
 
     - name: Get latest AKS version
       run: |
