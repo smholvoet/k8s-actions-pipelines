@@ -21,17 +21,13 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
     
     - name: Create resource group
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
+      run: |
           az group create \
             --name $RESOURCE_GROUP \
             --location $REGION_NAME
 
     - name: Configure networking
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
+      run: |
           az group create \
             --name $RESOURCE_GROUP \
             --location $REGION_NAME
@@ -45,9 +41,7 @@ jobs:
             --query id -o tsv)
 
     - name: Get latest AKS version
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
+      run: |
           VERSION=$(az aks get-versions \
               --location $REGION_NAME \
               --query 'orchestrators[?!isPreview] | [-1].orchestratorVersion' \
@@ -59,9 +53,7 @@ jobs:
         echo $AKS_CLUSTER_NAME
 
     - name: Create AKS cluster
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
+      run: |
           az aks create \
               --resource-group $RESOURCE_GROUP \
               --name $AKS_CLUSTER_NAME \
@@ -77,9 +69,7 @@ jobs:
               --generate-ssh-keys
 
     - name: Retreive cluster credentials
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
+      run: |
           az aks get-credentials \
               --resource-group $RESOURCE_GROUP \
               --name $AKS_CLUSTER_NAME
