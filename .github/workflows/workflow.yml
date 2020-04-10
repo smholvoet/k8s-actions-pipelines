@@ -4,14 +4,12 @@ jobs:
   deploy_resources:
     name: 'Deploy k8s resources'
     runs-on: ubuntu-latest
-    steps:
-
-    - name: Set variables
-      run: |
+    env: 
         REGION_NAME=westeurope
         RESOURCE_GROUP=aksworkshop
         SUBNET_NAME=aks-subnet
         VNET_NAME=aks-vnet
+    steps:
 
     # fetch credentials and store them in a secret before running az login 
     # see https://github.com/marketplace/actions/azure-login#configure-azure-credentials
@@ -29,13 +27,19 @@ jobs:
 
     - name: Create resource group
       run: |
-          az group create --name $RESOURCE_GROUP --location $REGION_NAME
-
-    - name: Configure networking
-      run: |
           az group create \
             --name $RESOURCE_GROUP \
             --location $REGION_NAME
+
+    - name: Configure networking
+      run: |
+          az network vnet create \
+              --resource-group $RESOURCE_GROUP \
+              --location $REGION_NAME \
+              --name $VNET_NAME \
+              --address-prefixes 10.0.0.0/8 \
+              --subnet-name $SUBNET_NAME \
+              --subnet-prefix 10.240.0.0/16
 
     - name: Set variables
       run: |
