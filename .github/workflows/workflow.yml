@@ -22,8 +22,8 @@ jobs:
     
     - name: Create resource group
       run: |
-          az group create
-            --name $RESOURCE_GROUP
+          az group create `
+            --name $RESOURCE_GROUP `
             --location $REGION_NAME
 
     - name: Configure networking
